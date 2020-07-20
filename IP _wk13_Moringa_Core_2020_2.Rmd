@@ -1,0 +1,319 @@
+---
+title: "Understanding the customer"
+author: "Kahiga Ndegwa"
+date: "19/07/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### 1. Problem Definition
+As a data scientist i have been tasked by "Kira Plastinina" which is a youth clothing online store, to use the data available and help the brand’s Sales and Marketing team to understand their customer’s behavior and characteristics of customer groups.
+## Metric of Success
+1. Perform EDA
+2. Perform clustering stating insights drawn from your analysis and visualizations.
+3. implementation using K-Means clustering vs Hierarchical clustering highlighting the strengths and limitations of each approach in the context of your analysis. 
+```{r}
+install.packages('tidyverse')
+library(tidyverse)
+
+install.packages('ggplot2')
+library(ggplot2)
+
+install.packages('caret')
+library(caret)
+
+install.packages('caretEnsemble')
+library(caretEnsemble)
+
+install.packages('psych')
+library(psych)
+
+install.packages('Amelia')
+library(Amelia)
+
+install.packages('mice')
+library(mice)
+
+install.packages('GGally')
+library(GGally)
+
+install.packages('rpart')
+library(rpart)
+
+install.packages('randomForest')
+library(randomForest)
+```
+
+###2. Data Sourcing
+The data we used was collected by the firm for the past one year
+###3Loading The data
+```{r}
+data <- read.csv("C:/Users/user/Desktop/online_shoppers_intention.csv")
+```
+###3.Check the Data
+
+```{r}
+# Looking at the structure of our data
+# ---
+# 
+str(data)
+```
+```{r}
+# Previewing our data
+head(data)
+```
+
+```{R}
+# Understanding our dataset
+# ---
+# 
+library(Hmisc)
+describe(data)
+```
+```{r}
+unique(data)
+```
+
+##Perform Data Cleaning
+```{r}
+sum(is.na(data))
+```
+```{r}
+na.omit(data)
+```
+# We visualize our dataset by checking how many missing values
+```{r}
+
+# ---
+# 
+library(Amelia)
+missmap(data)
+
+```
+
+```{r}
+sum(duplicated(data))
+```
+```{r}
+#Remove duplicated rows based on all rows
+data %>% distinct(Administrative,
+Administrative_Duration,Informational,Informational_Duration,ProductRelated,ProductRelated_Duration,BounceRates,ExitRates,PageValues,SpecialDay,Month,OperatingSystems,Browser,Region,TrafficType,VisitorType,Weekend,Revenue, .keep_all = TRUE)
+```
+##Perform Exploratory Data Analysis  (Univariate, Bivariate & Multivariate)
+#Univariate Analysis
+```{r}
+qplot(data$Month, geom = "bar")
+```
+```{r}
+pie(table(data$Weekend), main="weekends")
+```
+```{r}
+qplot(data$Region, geom = "bar")
+```
+```{r}
+qplot(data$SpecialDay, geom = "bar")
+```
+##Bivariate Analysis
+```{r}
+barplot(height= data$Informational, names.arg = data$Region)
+```
+```{r}
+library(ggplot2)
+qplot(x = data$ProductRelated, y = data$ProductRelated_Duration)
+```
+
+```{r}
+plot(data[, 1:3])
+```
+
+```{r}
+plot(data[, 4:6])
+```
+
+```{r}
+plot(data[, 7:10])
+```
+```{r}
+scatterplot3d(data[1:2])
+```
+
+line graph
+```{r}
+plot(x = data$Browser, y = data$Region, type = "l")
+```
+
+```{r}
+# boxplot of mpg by cyl
+boxplot(Browser ~ Region, data = data)
+```
+
+#heatmap(mydata)
+```{r}
+#highlighting numeric columns
+mydata <- data[, c(1,2,3,4,5,6,7,8,9,10)]
+head(mydata)
+cormat <- round(cor(mydata),2)
+head(cormat)
+
+library(reshape2)
+melted_cormat <- melt(cormat)
+head(melted_cormat)
+
+library(ggplot2)
+ggplot(data = melted_cormat, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()
+```
+
+#1. May,march,Dev and november are the most visited website months
+#2. week correlation between all the columns
+#3. most people visited the website on Weekdays
+#4. Region assigned 0 Aand Special day assigned 0 are the leading areas and days
+#5. Information collected at region 3 was the most
+#6. from the pairplots most columns are linear and positively skewwed
+
+##Multivariate Analysis
+```{r}
+library(RColorBrewer)
+
+names <- c("Administrative",
+"Administrative_Duration","Informational","Informational_Duration","ProductRelated","ProductRelated_Duration","BounceRates","ExitRates","PageValues")
+mylist <- list(data$Administrative,
+data$Administrative_Duration,data$Informational,data$Informational_Duration,data$ProductRelated,data$ProductRelated_Duration,data$BounceRates,data$ExitRates,data$PageValues)
+makeProfilePlot(mylist,names)
+```
+```{r}
+mosthighlycorrelated <- function(mydataframe,numtoreport)
+  {
+     # find the correlations
+     cormatrix <- cor(mydataframe)
+     # set the correlations on the diagonal or lower triangle to zero,
+     # so they will not be reported as the highest ones:
+     diag(cormatrix) <- 0
+     cormatrix[lower.tri(cormatrix)] <- 0
+     # flatten the matrix into a dataframe for easy sorting
+     fm <- as.data.frame(as.table(cormatrix))
+     # assign human-friendly names
+     names(fm) <- c("First.Variable", "Second.Variable","Correlation")
+     # sort and print the top n correlations
+     head(fm[order(abs(fm$Correlation),decreasing=T),],n=numtoreport)
+}
+```
+```{r}
+mosthighlycorrelated(data[1:10], 10)
+```
+```{r}
+data[sapply(data, is.numeric)] <- lapply(data[sapply(data, is.numeric)], function(x) ifelse(is.na(x), mean(x, na.rm = TRUE), x))
+```
+```{r}
+standardisedconcentrations <- as.data.frame(scale(data[1:10]))
+sapply(standardisedconcentrations,mean)
+```
+```{r}
+standardisedconcentrations <- as.data.frame(scale(data[1:10]))
+# standardise the variables
+data.pca <- prcomp(standardisedconcentrations)  
+```
+```{r}
+summary(data.pca)
+```
+```{r}
+data.pca$sdev
+```
+#Deciding how many pcas to retain
+```{r}
+screeplot(data.pca, type="lines")
+```
+#from out multivariate analysis at variance 3 is elbowed
+#the variance increases as we more pca is don
+
+##Implement the Solution
+#K-Means clustering
+
+```{r}
+data.new<- data[, c(1, 2, 4,5,6,7,8,9,10,11,12,13,14,15,16,17,18)]
+data.class <- data[, "Informational"]
+head(data.new)
+```
+```{r}
+normalize <- function(x){
+  return ((x-min(x)) / (max(x)-min(x)))
+}
+
+data.new$data.Administrative<- normalize(data.new$Administrative)
+data.new$data.Administrative_Duration<- normalize(data.new$Administrative_Duration)
+data.new$data.Informational<- normalize(data.new$Informational)
+data.new$data.Informational_Duration<- normalize(data.new$Informational_Duration)
+data.new$data.ProductRelated<- normalize(data.new$ProductRelated)
+data.new$data.ProductRelated_Duration<- normalize(data.new$ProductRelated_Duration)
+data.new$data.BounceRates<- normalize(data.new$BounceRates)
+data.new$data.ExitRates<- normalize(data.new$ExitRates)
+data.new$data.PageValues<- normalize(data.new$PageValues)
+data.new$data.SpecialDay<- normalize(data.new$SpecialDay)
+data.new$data.OperatingSystems<- normalize(data.new$OperatingSystems)
+data.new$data.Browser<- normalize(data.new$Browser)
+data.new$data.Region<- normalize(data.new$Region)
+data.new$data.Weekend<- normalize(data.new$Weekend)
+data.new$data.Revenue<- normalize(data.new$Revenue)
+head(data.new)
+```
+```{r}
+# Applying the K-means clustering algorithm with no. of centroids(k)=3
+# ---
+# 
+results <- kmeans(na.omit(data.class),3) # this helps in omitting NA 
+results
+```
+```{R}
+# Getting the value of cluster center datapoint value(3 centers for k=3)
+# ---
+# 
+results$centers 
+```
+```{r}
+results$cluster
+```
+```{r}
+par(mfrow = c(1,2), mar = c(5,4,2,2))
+plot(data.new[,1:5], col = results$cluster) 
+```
+```{r}
+plot(data.new[c(1,4)], col = data.class)
+```
+```{r}
+plot(data.new[c(1,2)], col = results$cluster)
+par(mfrow = c(2,2), mar = c(5,4,2,2))
+plot(data.new[c(3,4)], col = results$cluster)
+plot(data.new[c(3,4)], col = data.class)
+
+```
+```{r}
+table(results$cluster, data.class)
+```
+##Challenge the Solution
+#Hierarchical clustering
+```{r}
+x <- rbind(matrix(rnorm(100, sd = 0.3), ncol = 2),
+           matrix(rnorm(100, mean = 1, sd = 0.3), ncol = 2))
+colnames(x) <- c("x","y")
+summary(x)
+```
+```{r}
+summary(data)
+```
+```{r}
+data <- dist(data[,1:4])
+hcluster <- hclust(data)
+hcluster
+```
+```{r}
+hcd <- as.dendrogram(hcluster)
+nodePar <- list(lab.cex = 0.6, pch = c(20,19),
+                cex = 0.7, col = c("green","yellow"))
+plot(hcd, xlab = "Height", nodePar = nodePar, main = "Cluster dendrogram",
+     edgePar = list(col = c("red","blue"), lwd = 2:1), horiz = TRUE )
+```
+##Follow up Questions
+Do I have the right information?
+yes

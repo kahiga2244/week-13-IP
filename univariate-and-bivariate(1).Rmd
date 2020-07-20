@@ -1,0 +1,254 @@
+ADVERTISING EXPLORATORY DATA ANALYSIS
+##1.Define the question
+This will help us the question , the dataset and the metrics of success.
+
+#a. Specifying the question
+A Kenyan entrepreneur has created an online cryptography course and would want to advertise it on her blog. She currently targets audiences originating from various countries. In the past, she ran ads to advertise a related course on the same blog and collected data in the process. She would now like to employ your services as a Data Science Consultant to help her identify which individuals are most likely to click on her ads.
+
+#b. Define Metrics of Success
+Our metrics of our success is finding Conclusive Conclusions from the Data to know which individuals are more likely to click on her ads.
+
+#c. Understand context
+The context is using the Data to to do Exploratory analysis to get meaningful insights and conclusions from the Advertising data.
+
+#d. Record the experiment design
+This will involve: i).Removing anomalies, Missing Data and Duplicates. ii).EDA - Doing Univariate , Bivariate Analysis on the advertising data
+
+#e. Data relevance
+The data is very relevant to the experiment done.
+
+##2.Read Data
+We will start by importing the data
+##Loading The dataset
+```{r}
+advertising <- read.csv("C:/Users/user/Desktop/advertising.csv")
+```
+##Checking The Data
+#a.first columns
+```{r}
+head(advertising)
+```
+#b. last columns
+```{r}
+tail(advertising)
+```
+
+#rows
+```{r}
+nrow(advertising)
+```
+#summary
+```{r}
+summary(advertising)
+```
+#Tyding The Dataset
+#1.looking for duplicates
+```{r}
+duplicated(advertising)
+```
+#we found that the data had no duplicates
+#changing column name
+```{r}
+colnames(advertising)
+names(advertising)[names(advertising) == "Male"] <- "Gender"
+```
+#looking for null values
+```{r}
+any(is.na(advertising))
+```
+##EDA
+#Univariate Analysis
+```{r}
+
+hist(advertising$Age)
+```
+#The average age is 35
+```{r}
+plot(density(advertising$Age), main="Age Density Spread")
+```
+
+```{r}
+hist(advertising$Daily.Internet.Usage)
+```
+```{r}
+hist(advertising$Daily.Time.Spent.on.Site)
+```
+#Most people use 70 to 80 hours a day on a site
+```{r}
+pie(table(advertising$Gender), main="male vs female")
+```
+#1 being male And 0 being female
+#females spend more time than males online
+```{r}
+
+pie(table(advertising$Clicked.on.Ad), main="Most likely to click on Ads")
+
+#1 for Yes and 0 for No
+```
+
+
+#Bivariate Analysis
+
+```{r}
+
+boxplot(advertising$Daily.Internet.Usage-advertising$Age, notch = TRUE,col=c("grey","gold"), main="Age against internet usage")
+
+
+library(ggplot2)
+ggplot(advertising, aes(x = Area.Income, y = Age)) + geom_point()
+
+
+
+sp<-ggplot(advertising, aes(x=Area.Income, y=Daily.Internet.Usage, color=Gender)) + geom_point()
+sp
+
+
+
+ggplot(advertising, aes(x = Daily.Time.Spent.on.Site, y = Daily.Internet.Usage)) + geom_point()
+```
+#highlighting numeric columns
+```{r}
+mydata <- advertising[, c(1,2,3,4,7,10)]
+head(mydata)
+```
+#heatmap(mydata)
+```{r}
+cormat <- round(cor(mydata),2)
+head(cormat)
+
+library(reshape2)
+melted_cormat <- melt(cormat)
+head(melted_cormat)
+
+library(ggplot2)
+ggplot(data = melted_cormat, aes(x=Var1, y=Var2, fill=value)) + 
+  geom_tile()
+```
+#week correlation on age & click.on.ads,daily.internet usage&area.income
+
+#Conclusion from the anaylsis
+
+#1. Both genders are likely to click on ads equally
+#2. Bore female spend more time sites compared to males
+#3. Males use internet more compared to ladies
+#4. Age bracket of 20 to 30 years are more in area.income
+
+##Implementation solution
+##A. Linear regression
+
+```{r}
+library(mlbench)
+library(caret)
+```
+#svm(suport vector machine)
+```{r}
+intrain <- createDataPartition(y = advertising$Clicked.on.Ad, p= 0.7, list = FALSE)
+training <- advertising[intrain,]
+testing <- advertising[-intrain,]
+```
+```{r}
+# We check the dimensions of out training dataframe and testing dataframe
+# ---
+# 
+dim(training)
+dim(testing)
+```
+
+```{r}
+advertising[] <- lapply(advertising, function(x) as.numeric(as.character(x)))
+
+```
+#changing one column into factor 
+```{r}
+training[["Clicked.on.Ad"]] = factor(training[["Clicked.on.Ad"]])
+```
+```{r}
+sum(!is.na(advertising$Clicked.on.Ad))
+```
+
+```{r}
+trctrl <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+
+svm_Linear <- train(Clicked.on.Ad ~., data = training, method = "svmLinear",
+trControl=trctrl,
+preProcess = c("center", "scale"),
+tuneLength = 10)
+
+```
+```{r}
+svm_Linear
+```
+```{r}
+test_pred <- predict(svm_Linear, newdata = testing)
+test_pred
+
+```
+
+```{r}
+confusionMatrix(table(test_pred, testing$Clicked.on.Ad))
+```
+
+##challenging the solution
+#naive bayes
+plotting the graph
+```{r}
+ggpairs(advertising)
+
+```
+```{r}
+advertising$Clicked.on.Ad <- as.factor(advertising$Clicked.on.Ad)
+```
+
+```{r}
+# Splitting data into training and test data sets
+# ---
+# 
+indxTrain <- createDataPartition(y = advertising$Clicked.on.Ad,p = 0.70,list = FALSE)
+training <- data[indxTrain,]
+testing <- data[-indxTrain,]
+```
+```{r}
+# Checking dimensions of the split
+# ---
+#
+prop.table(table(advertising$Clicked.on.Ad)) * 100
+prop.table(table(training$Clicked.on.Ad)) * 100
+prop.table(table(testing$Clicked.on.Ad)) * 100
+```
+```{r}
+# Comparing the outcome of the training and testing phase
+# ---
+# Creating objects x which holds the predictor variables and y which holds the response variables
+# ---
+#
+library(rpart)
+x = training[,-10]
+y = training$Outcome
+```
+```{r}
+# Now building our model 
+# ---
+# 
+model = train(x,y,'nb',trControl=trainControl(method='cv',number=10))
+
+```
+
+```{r}
+# Model Evalution
+# ---
+# Predicting our testing set
+# 
+Predict <- predict(model,newdata = testing )
+```
+
+
+# Getting the confusion matrix to see accuracy value and other parameter values
+# ---
+# 
+```{r}
+confusionMatrix(Predict, testing$Clicked.on.Ad )
+```
+##conclusion my first model gave a prediction of 93% plus
+
+##follow up Questions
+The data provided was enough

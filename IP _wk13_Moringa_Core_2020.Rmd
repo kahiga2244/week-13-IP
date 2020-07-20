@@ -1,0 +1,88 @@
+---
+title: "Understanding the customer"
+author: "Kahiga Ndegwa"
+date: "19/07/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### 1. Problem Definition
+As a data scientist i have been tasked by "Kira Plastinina" which is a youth clothing online store, to use the data available and help the brand’s Sales and Marketing team to understand their customer’s behavior and characteristics of customer groups.
+## Metric of Success
+1. Perform EDA
+2. Perform clustering stating insights drawn from your analysis and visualizations.
+3. implementation using K-Means clustering vs Hierarchical clustering highlighting the strengths and limitations of each approach in the context of your analysis. 
+```{r}
+install.packages('tidyverse')
+library(tidyverse)
+
+install.packages('ggplot2')
+library(ggplot2)
+
+install.packages('caret')
+library(caret)
+
+install.packages('caretEnsemble')
+library(caretEnsemble)
+
+install.packages('psych')
+library(psych)
+
+install.packages('Amelia')
+library(Amelia)
+
+install.packages('mice')
+library(mice)
+
+install.packages('GGally')
+library(GGally)
+
+install.packages('rpart')
+library(rpart)
+
+install.packages('randomForest')
+library(randomForest)
+```
+
+###2. Data Sourcing
+The data we used was collected by the firm for the past one year
+###3Loading The data
+```{r}
+data <- read.csv("C:/Users/user/Desktop/online_shoppers_intention.csv")
+```
+###3.Check the Data
+
+```{r}
+# Looking at the structure of our data
+# ---
+# 
+str(data)
+```
+```{r}
+# Previewing our data
+head(data)
+```
+
+```{R}
+# Understanding our dataset
+# ---
+# 
+describe(data)
+```
+
+```{r}
+# We visualize our dataset by checking how many missing values
+# ---
+# 
+missmap(data)
+
+```
+
+
+##Perform Data Cleaning
+##Perform Exploratory Data Analysis  (Univariate, Bivariate & Multivariate)
+##Implement the Solution
+##Challenge the Solution
+##Follow up Questions
